@@ -1,0 +1,7 @@
+- [x] Track quote starts, package selections, add-on choices, and WhatsApp inquiry clicks.
+- [x] Securely store contact and quote inquiries and show them to admins.
+- [x] Add real sign-in, profiles, and persistent admin content.
+- [x] Verify submissions, permissions, and saved changes after refresh.
+- [x] Improve phone layouts and verify the complete mobile quote flow.
+- [ ] Approve the studio owner's administrator account — waiting for the owner to sign up.
+- [ ] Studio email notifications — waiting for the real recipient address and verified sender domain.

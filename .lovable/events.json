@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "events": {
+    "project.add_on_chosen": {
+      "event_schema_version": 1,
+      "description": "A visitor adds or removes a quote add-on.",
+      "privacy": {
+        "contains_pii": false,
+        "purpose": "product_analytics"
+      },
+      "properties_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["add_on_id", "selected"],
+        "properties": {
+          "add_on_id": {
+            "type": "string"
+          },
+          "selected": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "project.package_selected": {
+      "event_schema_version": 1,
+      "description": "A visitor selects a quote package or its Get a Quote link.",
+      "privacy": {
+        "contains_pii": false,
+        "purpose": "product_analytics"
+      },
+      "properties_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["tier", "group"],
+        "properties": {
+          "tier": {
+            "type": "string",
+            "enum": ["Basic", "Premium", "Luxury", "Custom"]
+          },
+          "group": {
+            "type": "string",
+            "enum": ["Wedding", "Pre-Wedding", "Birthday", "Engagement", "Events", "Other Services"]
+          }
+        }
+      }
+    },
+    "project.quote_started": {
+      "event_schema_version": 1,
+      "description": "A visitor first interacts with the quote builder.",
+      "privacy": {
+        "contains_pii": false,
+        "purpose": "product_analytics"
+      },
+      "properties_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      }
+    },
+    "project.whatsapp_inquiry_clicked": {
+      "event_schema_version": 1,
+      "description": "A visitor clicks a WhatsApp inquiry link.",
+      "privacy": {
+        "contains_pii": false,
+        "purpose": "product_analytics"
+      },
+      "properties_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source"],
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": ["quote", "contact", "cta"]
+          }
+        }
+      }
+    }
+  }
+}
