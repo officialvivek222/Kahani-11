@@ -65,7 +65,7 @@ function AccessRequired() {
 const nav = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { to: "/admin/portfolio", label: "Portfolio", icon: Image },
-  { to: "/admin/categories", label: "Categories", icon: FolderTree },
+  { to: "/admin/categories", label: "Services & Categories", icon: FolderTree },
   { to: "/admin/packages", label: "Packages", icon: Package },
   { to: "/admin/services", label: "Additional Services", icon: PlusSquare },
   { to: "/admin/inquiries", label: "Inquiries", icon: Inbox },

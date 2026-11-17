@@ -10,6 +10,7 @@ export interface Category {
   image: string;
   active: boolean;
   features: string[];
+  highlights?: string[];
 }
 export interface PortfolioItem {
   id: string;
@@ -61,6 +62,17 @@ export interface Inquiry {
   createdAt: string;
 }
 export type QuotationStatus = "Pending" | "Sent" | "Accepted" | "Declined";
+export interface QuotationRevision {
+  revision: number;
+  timestamp: string;
+  basePrice: number;
+  extraServices: number;
+  discount: number;
+  extraCharges: number;
+  finalAmount: number;
+  note: string;
+}
+
 export interface Quotation {
   id: string;
   customer: string;
@@ -70,8 +82,20 @@ export interface Quotation {
   eventDate: string;
   status: QuotationStatus;
   email?: string;
+  whatsapp?: string;
   location?: string;
   notes?: string;
   addOns?: string;
   durationDays?: number;
+  category?: string;
+  packageTier?: string;
+  basePrice?: number;
+  additionalServicesPrice?: number;
+  discount?: number;
+  extraCharges?: number;
+  finalQuotation?: number;
+  internalNotes?: string;
+  history?: QuotationRevision[];
+  addOnsList?: Array<{ name: string; price: number }>;
+  createdAt?: string;
 }

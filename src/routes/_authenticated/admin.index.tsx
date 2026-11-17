@@ -20,16 +20,20 @@ export const Route = createFileRoute("/_authenticated/admin/")({
 
 function Dashboard() {
   const s = useAdmin();
+  const pipelineValue = s.quotations.items.reduce(
+    (acc, q) => acc + (q.finalQuotation ?? q.estimate),
+    0,
+  );
   const stats = [
-    { l: "Total inquiries", v: s.inquiries.items.length, i: Inbox },
+    { l: "Total Inquiries", v: String(s.inquiries.items.length), i: Inbox },
     {
-      l: "New inquiries",
-      v: s.inquiries.items.filter((x) => x.status === "New").length,
+      l: "New Inquiries",
+      v: String(s.inquiries.items.filter((x) => x.status === "New").length),
       i: Sparkles,
     },
-    { l: "Quotation requests", v: s.quotations.items.length, i: BadgeIndianRupee },
-    { l: "Portfolio items", v: s.portfolio.items.length, i: Image },
-    { l: "Active packages", v: s.packages.items.filter((p) => p.active).length, i: Package },
+    { l: "Quotation Requests", v: String(s.quotations.items.length), i: BadgeIndianRupee },
+    { l: "Pipeline Value", v: formatINR(pipelineValue), i: Package },
+    { l: "Portfolio Items", v: String(s.portfolio.items.length), i: Image },
   ];
   return (
     <>
@@ -78,7 +82,7 @@ function Dashboard() {
                 <div>
                   <p>{q.customer}</p>
                   <p className="text-xs text-muted-foreground">
-                    {q.packageName} · {formatINR(q.estimate)}
+                    {q.packageName} · {formatINR(q.finalQuotation ?? q.estimate)}
                   </p>
                 </div>
                 <Badge s={q.status} />

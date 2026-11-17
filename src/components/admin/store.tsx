@@ -91,7 +91,8 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     upsert: async (item) => {
       setOverrides((o) => ({ ...o, [kind]: { ...o[kind], [item.id]: item } }));
       try {
-        await persist({ kind, id: item.id, data: encodeContent(item) });
+        const payload = kind === "quotations" || kind === "inquiries" ? item : encodeContent(item);
+        await persist({ kind, id: item.id, data: payload });
       } catch {
         setOverrides((o) => ({ ...o, [kind]: {} }));
       }
@@ -104,39 +105,70 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       }
     },
   });
-  const inquiries = data.contacts.map((row) => ({
-    ...(row.data as unknown as Inquiry),
-    id: row.id,
-    status: row.status as Inquiry["status"],
-    createdAt: row.created_at,
-    eventDate: "",
-  }));
-  const quotations = data.quotes.map((row) => {
-    const q = row.data as unknown as {
-      name: string;
-      mobile: string;
-      category: string;
-      packageTier: string;
-      eventDate: string;
-      email: string;
-      location: string;
-      notes: string;
-      addOns: { name: string }[];
-      durationDays: number;
+  const inquiries = data.contacts.map((row) => {
+    const d = (row.data as Record<string, unknown>) || {};
+    return {
+      ...(d as unknown as Inquiry),
+      id: row.id,
+      name: (d["name"] as string) || "Guest",
+      phone: (d["phone"] as string) || (d["mobile"] as string) || "",
+      email: (d["email"] as string) || "",
+      category: (d["category"] as string) || "General",
+      message: (d["message"] as string) || "",
+      status: (row.status || d["status"] || "New") as Inquiry["status"],
+      createdAt: row.created_at,
+      eventDate: (d["eventDate"] as string) || (d["date"] as string) || "—",
     };
+  });
+  const quotations = data.quotes.map((row) => {
+    const q = (row.data as Record<string, unknown>) || {};
+    const addOns = Array.isArray(q["addOns"])
+      ? (q["addOns"] as Array<{ name: string; price?: number }>)
+      : [];
+    const addOnsText = addOns.map((a) => a.name).join(", ");
+    const basePrice =
+      typeof q["basePrice"] === "number"
+        ? (q["basePrice"] as number)
+        : typeof q["packagePrice"] === "number"
+          ? (q["packagePrice"] as number)
+          : 0;
+    const additionalServicesPrice =
+      typeof q["additionalServicesPrice"] === "number"
+        ? (q["additionalServicesPrice"] as number)
+        : addOns.reduce((acc, a) => acc + (a.price || 0), 0);
+    const discount = typeof q["discount"] === "number" ? (q["discount"] as number) : 0;
+    const extraCharges = typeof q["extraCharges"] === "number" ? (q["extraCharges"] as number) : 0;
+    const finalQuotation =
+      typeof q["finalQuotation"] === "number" ? (q["finalQuotation"] as number) : row.estimate;
+    const category = (q["category"] as string) || "Custom";
+    const packageTier = (q["packageTier"] as string) || "Standard";
+
     return {
       id: row.id,
-      customer: q.name,
-      phone: q.mobile,
-      email: q.email,
-      location: q.location,
-      notes: q.notes,
-      addOns: q.addOns.map((a) => a.name).join(", "),
-      durationDays: q.durationDays,
-      packageName: `${q.category} · ${q.packageTier}`,
+      customer: (q["name"] as string) || "Guest",
+      phone: (q["mobile"] as string) || (q["phone"] as string) || "",
+      whatsapp:
+        (q["whatsapp"] as string) || (q["mobile"] as string) || (q["phone"] as string) || "",
+      email: (q["email"] as string) || "",
+      location: (q["location"] as string) || "Studio / On-location",
+      notes: (q["notes"] as string) || "",
+      addOns: addOnsText,
+      addOnsList: addOns.map((a) => ({ name: a.name, price: a.price || 0 })),
+      durationDays: (q["durationDays"] as number) || 1,
+      packageName: `${category} · ${packageTier}`,
+      category,
+      packageTier,
       estimate: row.estimate,
-      eventDate: q.eventDate,
-      status: row.status as Quotation["status"],
+      basePrice,
+      additionalServicesPrice,
+      discount,
+      extraCharges,
+      finalQuotation,
+      internalNotes: (q["internalNotes"] as string) || "",
+      history: Array.isArray(q["history"]) ? (q["history"] as QuotationRevision[]) : [],
+      eventDate: (q["eventDate"] as string) || "—",
+      status: (row.status || "Pending") as Quotation["status"],
+      createdAt: row.created_at,
     };
   });
   const settings = {

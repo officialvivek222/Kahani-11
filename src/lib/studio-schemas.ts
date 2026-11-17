@@ -28,6 +28,7 @@ export const contentSchemas = {
     image,
     active: z.boolean(),
     features,
+    highlights: features.optional(),
   }),
   portfolio: z.object({
     id: name,

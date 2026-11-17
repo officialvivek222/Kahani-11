@@ -104,17 +104,57 @@ export const saveAdminContent = createServerFn({ method: "POST" })
     if (!allowed) throw new Error("Studio administrator access required");
     if (data.kind === "inquiries" || data.kind === "quotations") {
       const table = data.kind === "inquiries" ? "contact_submissions" : "quote_submissions";
-      const result = data.remove
-        ? await context.supabase.from(table).delete().eq("id", data.id)
-        : await context.supabase
-            .from(table)
-            .update({
-              status: (data.kind === "inquiries" ? inquiryStatuses : quotationStatuses).parse(
-                (data.data as { status?: unknown })?.status,
-              ),
-            })
-            .eq("id", data.id);
-      if (result.error) throw new Error("Could not save inquiry");
+      if (data.remove) {
+        const result = await context.supabase.from(table).delete().eq("id", data.id);
+        if (result.error) throw new Error("Could not delete submission");
+      } else if (data.kind === "quotations") {
+        const { data: existing } = await context.supabase
+          .from("quote_submissions")
+          .select("data, estimate")
+          .eq("id", data.id)
+          .single();
+        const prevData = (existing?.data as Record<string, unknown>) || {};
+        const incoming = (data.data as Record<string, unknown>) || {};
+        const status = quotationStatuses.parse(incoming["status"]);
+        const updatedData: Record<string, unknown> = {
+          ...prevData,
+          ...incoming,
+          status,
+        };
+        const finalEstimate =
+          typeof incoming["finalQuotation"] === "number"
+            ? Math.round(incoming["finalQuotation"] as number)
+            : typeof incoming["estimate"] === "number"
+              ? Math.round(incoming["estimate"] as number)
+              : (existing?.estimate ?? 0);
+        const result = await context.supabase
+          .from("quote_submissions")
+          .update({
+            status,
+            estimate: finalEstimate,
+            data: updatedData as unknown as Json,
+          })
+          .eq("id", data.id);
+        if (result.error) throw new Error("Could not save quotation");
+      } else {
+        const { data: existing } = await context.supabase
+          .from("contact_submissions")
+          .select("data")
+          .eq("id", data.id)
+          .single();
+        const prevData = (existing?.data as Record<string, unknown>) || {};
+        const incoming = (data.data as Record<string, unknown>) || {};
+        const status = inquiryStatuses.parse(incoming["status"]);
+        const updatedData = { ...prevData, ...incoming, status };
+        const result = await context.supabase
+          .from("contact_submissions")
+          .update({
+            status,
+            data: updatedData as unknown as Json,
+          })
+          .eq("id", data.id);
+        if (result.error) throw new Error("Could not save inquiry");
+      }
     } else {
       const parsed = data.remove
         ? null
