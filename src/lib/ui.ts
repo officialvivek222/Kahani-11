@@ -8,7 +8,7 @@ export const btn = (v: V = "solid", extra?: string) =>
       "border border-foreground/70 text-foreground hover:bg-foreground hover:text-background",
     v === "light" && "bg-card text-foreground hover:bg-muted",
     v === "ghostLight" && "border border-paper/70 text-paper hover:bg-paper hover:text-charcoal",
-    v === "bronze" && "bg-bronze text-paper hover:bg-olive",
+    v === "bronze" && "bg-bronze text-paper dark:text-charcoal hover:bg-olive hover:text-paper",
     extra,
   );
 export const field =

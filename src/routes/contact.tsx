@@ -1,21 +1,24 @@
 import type * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Facebook, Instagram, Mail, MapPin, MessageCircle, Phone, Youtube } from "lucide-react";
+import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 import { PageHeader } from "@/components/site/PageHeader";
 import { formatWhatsAppDisplay, useStudio, waLink } from "@/config/studio";
 import { useStudioContent } from "@/lib/studio-content";
+import { images } from "@/lib/images";
 import { btn, field } from "@/lib/ui";
-import { useServerFn } from "@tanstack/react-start";
 import { submitContact } from "@/lib/studio.functions";
 import { Button } from "@/components/ui/button";
+import { getMapSrc } from "@/lib/studio-schemas";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://kahanistudio.in/og-image.jpg" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://kahanistudio.in/og-image.jpg" },
       { title: "Contact — Kahani Studio" },
       {
         name: "description",
@@ -46,12 +49,15 @@ type Form = z.infer<typeof schema>;
 function Contact() {
   const studio = useStudio();
   const { categories } = useStudioContent();
+  const mapSrc =
+    (studio.mapEmbed && getMapSrc(studio.mapEmbed)) ||
+    `https://maps.google.com/maps?q=${encodeURIComponent(studio.address)}&z=15&output=embed`;
   const [f, setF] = useState<Form>({ name: "", phone: "", email: "", category: "", message: "" });
   const [errors, setErrors] = useState<Partial<Record<keyof Form, string>>>({});
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState("");
-  const saveContact = useServerFn(submitContact);
+  const saveContact = submitContact;
   const set =
     (k: keyof Form) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -109,10 +115,11 @@ function Contact() {
             </F>
             <F label="Phone" err={errors.phone}>
               <input
+                type="tel"
+                inputMode="tel"
                 className={field}
                 value={f.phone}
                 onChange={set("phone")}
-                inputMode="tel"
                 autoComplete="tel"
               />
             </F>
@@ -208,36 +215,58 @@ function Contact() {
               href={studio.social.instagram}
               target="_blank"
               rel="noreferrer"
-              className="border border-border p-3 hover:border-foreground"
+              className="border border-border p-3 hover:border-foreground transition-colors"
             >
-              <Instagram size={16} />
-            </a>
-            <a
-              aria-label="Facebook"
-              href={studio.social.facebook}
-              target="_blank"
-              rel="noreferrer"
-              className="border border-border p-3 hover:border-foreground"
-            >
-              <Facebook size={16} />
+              <img
+                src={images.instagram}
+                alt="Instagram"
+                width={16}
+                height={16}
+                className="size-4 object-contain rounded-[3px]"
+              />
             </a>
             <a
               aria-label="YouTube"
               href={studio.social.youtube}
               target="_blank"
               rel="noreferrer"
-              className="border border-border p-3 hover:border-foreground"
+              className="border border-border p-3 hover:border-foreground transition-colors"
             >
-              <Youtube size={16} />
+              <img
+                src={images.youtube}
+                alt="YouTube"
+                width={16}
+                height={16}
+                className="size-4 object-contain"
+              />
             </a>
           </div>
         </aside>
       </section>
       <section className="container-x pb-24">
-        <div className="flex min-h-[220px] w-full min-w-0 flex-col items-center justify-center border border-dashed border-border bg-card px-5 text-center sm:aspect-[21/9] sm:min-h-[260px]">
-          <MapPin className="text-bronze" />
-          <p className="mt-3 font-display text-[26px]">Map coming soon</p>
-          <p className="mt-1 text-sm text-muted-foreground">{studio.address}</p>
+        <div className="overflow-hidden border border-border bg-card">
+          <iframe
+            title="Kahani Studio Location Map"
+            src={mapSrc}
+            className="h-[320px] w-full border-0 sm:h-[400px]"
+            loading="lazy"
+            allowFullScreen
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        </div>
+        <div className="mt-4 flex justify-end">
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(studio.address)}`}
+            target="_blank"
+            rel="noreferrer"
+            className={btn(
+              "outline",
+              "inline-flex items-center gap-2 text-xs uppercase tracking-wider",
+            )}
+          >
+            <MapPin size={14} />
+            <span>Get directions</span>
+          </a>
         </div>
       </section>
     </>

@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Instagram } from "lucide-react";
 import { useStudioContent } from "@/lib/studio-content";
 import { images } from "@/lib/images";
 import { btn } from "@/lib/ui";
@@ -16,7 +15,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://kahanistudio.in/og-image.jpg" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://kahanistudio.in/og-image.jpg" },
       { title: "Kahani Studio — Wedding & Story Photography" },
       {
         name: "description",
@@ -242,8 +243,9 @@ function Home() {
           <h2 className="text-section mt-5">Choose your chapter</h2>
         </Reveal>
         <div className="grid gap-6 lg:grid-cols-3">
-          {packages
-            .filter((p) => p.group === "Wedding")
+          {[...packages]
+            .filter((p) => p.group === "Wedding" && p.active)
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.price - b.price)
             .map((p) => (
               <PackageCard key={p.id} pkg={p} />
             ))}
@@ -277,7 +279,13 @@ function Home() {
             rel="noreferrer"
             className={btn("outline")}
           >
-            <Instagram size={16} />
+            <img
+              src={images.instagram}
+              alt="Instagram"
+              width={18}
+              height={18}
+              className="size-[18px] object-contain rounded-[4px]"
+            />
             Follow Us
           </a>
         </div>
@@ -291,7 +299,12 @@ function Home() {
               className="img-zoom block aspect-square"
               aria-label="Open Instagram"
             >
-              <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" />
+              <img
+                src={src}
+                alt={`Kahani Studio gallery preview ${i + 1}`}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
             </a>
           ))}
         </div>

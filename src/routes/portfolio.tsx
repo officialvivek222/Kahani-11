@@ -3,12 +3,15 @@ import { PageHeader } from "@/components/site/PageHeader";
 import { Gallery } from "@/components/site/Gallery";
 import { CtaBand } from "@/components/site/CtaBand";
 import { useStudioContent } from "@/lib/studio-content";
+import { images } from "@/lib/images";
 
 export const Route = createFileRoute("/portfolio")({
   head: () => ({
     meta: [
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://kahanistudio.in/og-image.jpg" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://kahanistudio.in/og-image.jpg" },
       { title: "Portfolio — Kahani Studio" },
       {
         name: "description",

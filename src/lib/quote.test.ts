@@ -75,8 +75,8 @@ describe("waLink and WhatsApp number helpers", () => {
   });
 
   it("formats display numbers cleanly", () => {
-    expect(formatWhatsAppDisplay("917620192024")).toBe("+91 76201 92024");
-    expect(formatWhatsAppDisplay()).toBe("+91 76201 92024");
+    expect(formatWhatsAppDisplay("918600454430")).toBe("+91 86004 54430");
+    expect(formatWhatsAppDisplay()).toBe("+91 86004 54430");
   });
 
   it("generates wa.me link with normalized country code and encoded message", () => {

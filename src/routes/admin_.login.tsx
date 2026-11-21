@@ -26,7 +26,11 @@ function Login() {
   return (
     <div className="grid min-h-screen bg-admin-bg lg:grid-cols-2">
       <div className="relative hidden lg:block">
-        <img src={images.bride} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <img
+          src={images.bride}
+          alt="Kahani Studio bridal portrait"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
         <div className="absolute inset-0 bg-overlay/40" />
         <p className="absolute bottom-10 left-10 font-display text-4xl text-paper">
           {studio.tagline}

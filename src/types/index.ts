@@ -11,6 +11,7 @@ export interface Category {
   active: boolean;
   features: string[];
   highlights?: string[];
+  order?: number | undefined;
 }
 export interface PortfolioItem {
   id: string;
@@ -21,17 +22,18 @@ export interface PortfolioItem {
   ratio: "portrait" | "landscape" | "square";
   featured: boolean;
 }
-export type PackageTier = "Basic" | "Premium" | "Luxury";
-export type PackageGroup =
-  "Wedding" | "Pre-Wedding" | "Birthday" | "Engagement" | "Events" | "Other Services";
+export type PackageTier = string;
+export type PackageGroup = string;
 export interface Package {
   id: string;
   group: PackageGroup;
-  tier: PackageTier;
+  tier: string;
   price: number;
   description: string;
   features: string[];
   active: boolean;
+  popular?: boolean | undefined;
+  order?: number | undefined;
 }
 export interface AddOn {
   id: string;

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Eye, Mail, MessageCircle, Phone, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { useAdmin } from "@/components/admin/store";
 import { aBtn, aField, Badge, Card, Modal, PageTitle, Table, Td } from "@/components/admin/ui";
 import { waLink } from "@/config/studio";
@@ -139,9 +140,13 @@ function Page() {
                   aria-label="Update status"
                   className="rounded-sm border border-input bg-card px-2 py-1 text-xs font-medium"
                   value={q.status}
-                  onChange={(e) =>
-                    inquiries.upsert({ ...q, status: e.target.value as InquiryStatus })
-                  }
+                  onChange={async (e) => {
+                    try {
+                      await inquiries.upsert({ ...q, status: e.target.value as InquiryStatus });
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : "Could not update status");
+                    }
+                  }}
                 >
                   {statuses.map((s) => (
                     <option key={s} value={s}>
@@ -290,7 +295,11 @@ function Page() {
                     const newStatus = e.target.value as InquiryStatus;
                     const updated = { ...view, status: newStatus };
                     setView(updated);
-                    await inquiries.upsert(updated);
+                    try {
+                      await inquiries.upsert(updated);
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : "Could not update status");
+                    }
                   }}
                 >
                   {statuses.map((s) => (

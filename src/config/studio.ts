@@ -4,18 +4,19 @@ export const studio = {
   name: "KAHANI STUDIO",
   shortName: "Kahani",
   tagline: "Every Picture Has a Story.",
-  phone: "+91 76201 92024",
-  whatsapp: "917620192024", // international format, digits only — used for wa.me links
-  email: "rolexjane1227@gmail.com",
+  phone: "+91 86004 54430",
+  whatsapp: "918600454430", // international format, digits only — used for wa.me links
+  email: "sangketpatil372@gmail.com",
   address: "2nd Floor, 14 Linking Road, Bandra West, Mumbai 400050",
   hours: "Mon – Sat, 10am – 7pm",
   social: {
-    instagram: "https://instagram.com/kahanistudio",
-    facebook: "https://facebook.com/kahanistudio",
-    youtube: "https://youtube.com/@kahanistudio",
+    instagram: "https://www.instagram.com/kahani_photography_?bqrl=Mno1OWY1eDRmMXZw",
+    youtube: "https://youtube.com/@newbhagvabandbhadagaon?si=MBh8smlpTfyMOxUN",
+    facebook: "",
   },
-  instagramHandle: "@kahanistudio",
+  instagramHandle: "@kahani_photography_",
   currency: "INR",
+  mapEmbed: "",
 } as const;
 export type StudioDetails = {
   name: string;
@@ -26,9 +27,10 @@ export type StudioDetails = {
   email: string;
   address: string;
   hours: string;
-  social: { instagram: string; facebook: string; youtube: string };
+  social: { instagram: string; youtube: string; facebook?: string };
   instagramHandle: string;
   currency: string;
+  mapEmbed?: string;
 };
 export const StudioDetailsContext = createContext<StudioDetails>(studio);
 export const useStudio = () => useContext(StudioDetailsContext);
@@ -43,9 +45,10 @@ export function studioFromSettings(value: unknown): StudioDetails {
     address: s["address"] ?? studio.address,
     social: {
       instagram: s["instagram"] ?? studio.social.instagram,
-      facebook: s["facebook"] ?? studio.social.facebook,
       youtube: s["youtube"] ?? studio.social.youtube,
+      facebook: s["facebook"] ?? "",
     },
+    mapEmbed: s["mapEmbed"] ?? "",
   };
 }
 

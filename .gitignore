@@ -33,3 +33,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Build & temp
+tsconfig.tsbuildinfo
+supabase/.temp/

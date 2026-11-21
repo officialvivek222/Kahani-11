@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { aBtn, aField, Card, L, PageTitle } from "@/components/admin/ui";
+import { aField, Card, L, PageTitle } from "@/components/admin/ui";
 import { useState } from "react";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { adminContentOptions } from "@/components/admin/store";
@@ -27,9 +27,10 @@ function Page() {
   const client = useQueryClient();
   const [name, setName] = useState(data.profile.display_name);
   const [avatar, setAvatar] = useState(data.profile.avatar_url);
-  const [current, setCurrent] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmation, setConfirmation] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+
   return (
     <>
       <PageTitle title="Admin Profile" />
@@ -43,6 +44,7 @@ function Page() {
             <p className="text-sm text-muted-foreground">Owner</p>
           </div>
         </Card>
+
         <Card className="p-6">
           <form
             className="grid gap-4 sm:grid-cols-2"
@@ -58,16 +60,6 @@ function Page() {
                   .update({ display_name, avatar_url })
                   .eq("id", data.profile.id);
                 if (error) throw error;
-                if (password) {
-                  z.string().min(8).max(128).parse(password);
-                  if (password !== confirmation || !current)
-                    throw new Error("Enter your current password and matching new passwords.");
-                  const { error } = await supabase.auth.updateUser({
-                    password,
-                    current_password: current,
-                  });
-                  if (error) throw error;
-                }
                 await client.invalidateQueries({ queryKey: ["studio-admin"] });
                 toast.success("Profile updated");
               } catch (e) {
@@ -91,35 +83,68 @@ function Page() {
                 maxLength={2048}
               />
             </L>
-            <L label="Current password">
-              <input
-                type="password"
-                className={aField}
-                value={current}
-                onChange={(e) => setCurrent(e.target.value)}
-                autoComplete="current-password"
-              />
-            </L>
+            <div className="sm:col-span-2">
+              <Button type="submit">Update profile</Button>
+            </div>
+          </form>
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="mb-4 text-base font-medium">Change password</h2>
+          <form
+            className="grid gap-4 sm:grid-cols-2"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setSavingPassword(true);
+              try {
+                if (newPassword.length < 8) {
+                  throw new Error("Password must be at least 8 characters.");
+                }
+                if (newPassword !== confirmPassword) {
+                  throw new Error("Passwords do not match.");
+                }
+                const { error } = await supabase.auth.updateUser({
+                  password: newPassword,
+                });
+                if (error) throw error;
+                setNewPassword("");
+                setConfirmPassword("");
+                toast.success("Password updated successfully");
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Could not update password");
+              } finally {
+                setSavingPassword(false);
+              }
+            }}
+          >
             <L label="New password">
               <input
                 type="password"
                 className={aField}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
                 autoComplete="new-password"
+                required
+                minLength={8}
+                maxLength={128}
               />
             </L>
             <L label="Confirm password">
               <input
                 type="password"
                 className={aField}
-                value={confirmation}
-                onChange={(e) => setConfirmation(e.target.value)}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 autoComplete="new-password"
+                required
+                minLength={8}
+                maxLength={128}
               />
             </L>
             <div className="sm:col-span-2">
-              <Button type="submit">Update profile</Button>
+              <Button type="submit" disabled={savingPassword}>
+                {savingPassword ? "Updating…" : "Change password"}
+              </Button>
             </div>
           </form>
         </Card>

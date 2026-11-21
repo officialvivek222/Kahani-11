@@ -252,7 +252,7 @@ const tiers: { tier: PackageTier; mult: number; desc: string }[] = [
   { tier: "Premium", mult: 1.9, desc: "Our most-loved balance of photos and film." },
   { tier: "Luxury", mult: 3.2, desc: "A complete, editorial storytelling experience." },
 ];
-const groupBase: Record<PackageGroup, { base: number; f: string[][] }> = {
+const groupBase = {
   Wedding: {
     base: 85000,
     f: [
@@ -345,15 +345,17 @@ const groupBase: Record<PackageGroup, { base: number; f: string[][] }> = {
     ],
   },
 };
-export const packages: Package[] = (Object.keys(groupBase) as PackageGroup[]).flatMap((g) =>
+export const packages: Package[] = Object.entries(groupBase).flatMap(([g, data]) =>
   tiers.map((t, i) => ({
     id: `${g}-${t.tier}`.toLowerCase().replace(/\s+/g, "-"),
     group: g,
     tier: t.tier,
-    price: Math.round((groupBase[g].base * t.mult) / 1000) * 1000,
+    price: Math.round((data.base * t.mult) / 1000) * 1000,
     description: t.desc,
-    features: groupBase[g].f[i] ?? [],
+    features: data.f[i] ?? [],
     active: true,
+    popular: t.tier === "Premium",
+    order: i + 1,
   })),
 );
 

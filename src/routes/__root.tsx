@@ -5,18 +5,15 @@ import {
   createRootRouteWithContext,
   useRouter,
   HeadContent,
-  Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect } from "react";
 import { useLocation } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
 import { StudioContentProvider, publicContentOptions } from "@/lib/studio-content";
 import { supabase } from "@/integrations/supabase/client";
-
-import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { themeScript } from "@/lib/theme";
 
@@ -80,12 +77,20 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   );
 }
 
+function LoadingScreen() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
+      <div className="flex flex-col items-center gap-4">
+        <span className="font-display text-2xl tracking-[0.2em]">KAHANI STUDIO</span>
+        <div className="size-6 animate-spin rounded-full border-2 border-bronze border-t-transparent" />
+      </div>
+    </div>
+  );
+}
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   loader: ({ context }) => context.queryClient.ensureQueryData(publicContentOptions),
   head: () => ({
-    // Replace these placeholders with the app's name and description when first building the app.
-    // Each content route, / included, must still set its own head(). Never add og:image or
-    // twitter:image here: every page without its own would inherit the root's preview image.
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
@@ -101,14 +106,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content: "Wedding, pre-wedding, portrait and event photography & cinematography studio.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://kahanistudio.in/og-image.jpg" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://kahanistudio.in/og-image.jpg" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.ico", sizes: "any" },
+      { rel: "icon", href: "/favicon.png", type: "image/png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -116,27 +121,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@400;500&family=Playfair+Display:ital@1&display=swap",
       },
     ],
+    scripts: [
+      {
+        children: themeScript,
+      },
+    ],
   }),
-  shellComponent: RootShell,
   component: RootComponent,
+  pendingComponent: LoadingScreen,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
-
-function RootShell({ children }: { children: ReactNode }) {
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
@@ -157,8 +152,8 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <HeadContent />
       <StudioContentProvider>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         {!isAdmin && <Navbar />}
         <main>
           <Outlet />

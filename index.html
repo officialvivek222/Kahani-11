@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="Rootmile Technologies">
+  <title>Kahani Studio — Every Picture Has a Story</title>
+  <meta name="description" content="Editorial wedding, pre-wedding and portrait photography and cinematography. Every picture has a story.">
+  <meta property="og:title" content="Kahani Studio — Wedding & Story Photography">
+  <meta property="og:description" content="Editorial wedding, pre-wedding and portrait photography and cinematography.">
+  <meta property="og:image" content="https://kahanistudio.in/og-image.jpg">
+  <meta property="og:url" content="https://kahanistudio.in/">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" href="/favicon.png" type="image/png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@400;500&family=Playfair+Display:ital@1&display=swap" />
+</head>
+
+<body>
+  <div id="root">
+    <div id="initial-loader" style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background-color: #faf8f5; color: #1a1918; font-family: 'Cormorant Garamond', Georgia, serif;">
+      <style>
+        @media (prefers-color-scheme: dark) {
+          #initial-loader { background-color: #0d0c0b !important; color: #f5f2eb !important; }
+          #initial-loader .initial-spinner { border-color: rgba(255,255,255,0.15) !important; border-top-color: #c5a059 !important; }
+        }
+        @keyframes initial-spin { to { transform: rotate(360deg); } }
+      </style>
+      <span style="font-size: 26px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 500;">Kahani Studio</span>
+      <div class="initial-spinner" style="width: 24px; height: 24px; border: 2px solid rgba(0,0,0,0.15); border-top-color: #967032; border-radius: 50%; animation: initial-spin 0.8s linear infinite;"></div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

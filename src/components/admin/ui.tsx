@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const aField =
-  "w-full rounded-sm border border-input bg-card px-3 py-2 text-sm outline-none focus:border-bronze";
+  "w-full rounded-sm border border-input bg-card text-foreground px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-bronze";
 export const aBtn = (v: "primary" | "ghost" | "danger" = "primary") =>
   cn(
     "inline-flex items-center gap-2 rounded-sm px-4 py-2 text-sm font-medium transition-colors",
@@ -137,7 +137,7 @@ export function Toggle({
     >
       <span
         className={cn(
-          "absolute top-0.5 size-4 rounded-full bg-card transition-all",
+          "absolute top-0.5 size-4 rounded-full bg-paper dark:bg-foreground shadow-xs transition-all",
           on ? "left-[18px]" : "left-0.5",
         )}
       />

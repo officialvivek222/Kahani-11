@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { useAdmin } from "@/components/admin/store";
 import { aBtn, aField, Badge, Card, Modal, PageTitle, Table, Td } from "@/components/admin/ui";
 import {
@@ -28,6 +29,7 @@ import {
   studio,
   waLink,
 } from "@/config/studio";
+import { calculateQuote } from "@/lib/quote";
 import type { Quotation, QuotationRevision, QuotationStatus } from "@/types";
 
 export const Route = createFileRoute("/_authenticated/admin/quotations")({
@@ -97,6 +99,7 @@ function Page() {
   const [search, setSearch] = useState("");
   const [selectedQuote, setSelectedQuote] = useState<Quotation | null>(null);
   const [isAdjusting, setIsAdjusting] = useState(false);
+  const [isSavingAdjustments, setIsSavingAdjustments] = useState(false);
   const [printQuote, setPrintQuote] = useState<Quotation | null>(null);
 
   // Editable price adjustment state
@@ -139,10 +142,10 @@ function Page() {
     setManualOverride(
       q.finalQuotation &&
         q.finalQuotation !==
-          (q.basePrice ?? q.estimate) +
-            (q.additionalServicesPrice ?? 0) -
-            (q.discount ?? 0) +
-            (q.extraCharges ?? 0)
+        (q.basePrice ?? q.estimate) +
+        (q.additionalServicesPrice ?? 0) -
+        (q.discount ?? 0) +
+        (q.extraCharges ?? 0)
         ? q.finalQuotation
         : null,
     );
@@ -151,11 +154,24 @@ function Page() {
     setIsAdjusting(true);
   };
 
-  const calculatedTotal = Math.max(0, basePrice + extrasPrice + extraCharges - discount);
+  const extraDaysCost = selectedQuote
+    ? calculateQuote({
+      packageTier: selectedQuote.packageTier || "Custom",
+      packagePrice: basePrice,
+      addOns: [],
+      durationDays: selectedQuote.durationDays || 1,
+    }).extraDaysCost
+    : 0;
+
+  const calculatedTotal = Math.max(
+    0,
+    basePrice + extraDaysCost + extrasPrice + extraCharges - discount,
+  );
   const effectiveFinalAmount = manualOverride !== null ? manualOverride : calculatedTotal;
 
   const handleSaveAdjustments = async (newStatus?: QuotationStatus) => {
-    if (!selectedQuote) return;
+    if (!selectedQuote || isSavingAdjustments) return;
+    setIsSavingAdjustments(true);
 
     const currentHistory: QuotationRevision[] = selectedQuote.history || [];
     const hasPriceChanged =
@@ -166,19 +182,19 @@ function Page() {
 
     const newRevision: QuotationRevision | null = hasPriceChanged
       ? {
-          revision: currentHistory.length + 1,
-          timestamp: new Date().toISOString(),
-          basePrice,
-          extraServices: extrasPrice,
-          discount,
-          extraCharges,
-          finalAmount: effectiveFinalAmount,
-          note:
-            revisionNote.trim() ||
-            (newStatus === "Sent"
-              ? "Quotation finalized and dispatched to customer"
-              : "Price adjusted by admin"),
-        }
+        revision: currentHistory.length + 1,
+        timestamp: new Date().toISOString(),
+        basePrice,
+        extraServices: extrasPrice,
+        discount,
+        extraCharges,
+        finalAmount: effectiveFinalAmount,
+        note:
+          revisionNote.trim() ||
+          (newStatus === "Sent"
+            ? "Quotation finalized and dispatched to customer"
+            : "Price adjusted by admin"),
+      }
       : null;
 
     const updatedHistory = newRevision ? [...currentHistory, newRevision] : currentHistory;
@@ -200,9 +216,12 @@ function Page() {
       await quotations.upsert(updatedQuote);
       setSelectedQuote(updatedQuote);
       setRevisionNote("");
-      toast.success("Quotation updated and saved successfully");
-    } catch {
-      // Error handled by store
+      toast.success("Quotation saved");
+      setIsAdjusting(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to update quotation");
+    } finally {
+      setIsSavingAdjustments(false);
     }
   };
 
@@ -493,6 +512,22 @@ function Page() {
 
                 <div>
                   <label className="block text-xs font-medium text-foreground">
+                    Extra days (₹)
+                  </label>
+                  <input
+                    type="number"
+                    readOnly
+                    disabled
+                    value={extraDaysCost}
+                    className={aField + " mt-1 opacity-70 cursor-not-allowed"}
+                  />
+                  <span className="text-[10px] text-muted-foreground">
+                    Duration: {selectedQuote.durationDays || 1} day(s) ({Math.max(0, (selectedQuote.durationDays || 1) - 1)} extra day(s) × 35%)
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-foreground">
                     Additional Services / Add-ons (₹)
                   </label>
                   <input
@@ -545,7 +580,7 @@ function Page() {
                 <div className="text-xs">
                   <span className="text-muted-foreground">Formula: </span>
                   <span className="font-mono">
-                    {formatINR(basePrice)} + {formatINR(extrasPrice)} + {formatINR(extraCharges)} -{" "}
+                    {formatINR(basePrice)} + {formatINR(extraDaysCost)} + {formatINR(extrasPrice)} + {formatINR(extraCharges)} -{" "}
                     {formatINR(discount)}
                   </span>
                   <span className="ml-2 font-bold text-foreground">
@@ -706,9 +741,14 @@ function Page() {
               </button>
 
               <div className="flex gap-2">
-                <button type="button" onClick={() => handleSaveAdjustments()} className={aBtn()}>
+                <button
+                  type="button"
+                  disabled={isSavingAdjustments}
+                  onClick={() => handleSaveAdjustments()}
+                  className={cn(aBtn(), "disabled:opacity-50 disabled:cursor-not-allowed")}
+                >
                   <Save size={14} />
-                  <span>Save Adjustments</span>
+                  <span>{isSavingAdjustments ? "Saving…" : "Save Adjustments"}</span>
                 </button>
               </div>
             </div>
@@ -718,18 +758,18 @@ function Page() {
 
       {/* Printable / PDF Quotation View */}
       {printQuote && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-sm bg-white p-8 text-black shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/70 p-4 backdrop-blur-xs">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-sm border border-border bg-card p-8 text-foreground shadow-2xl print:border-none print:bg-white print:text-black">
             {/* Header & Logo */}
-            <div className="flex items-start justify-between border-b border-neutral-200 pb-6">
+            <div className="flex items-start justify-between border-b border-border pb-6 print:border-neutral-200">
               <div>
-                <h1 className="font-serif text-3xl font-bold tracking-wider text-neutral-900">
+                <h1 className="font-serif text-3xl font-bold tracking-wider text-foreground print:text-neutral-900">
                   {studio.name}
                 </h1>
-                <p className="text-xs uppercase tracking-widest text-neutral-500">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground print:text-neutral-500">
                   {studio.tagline}
                 </p>
-                <div className="mt-3 text-xs leading-relaxed text-neutral-600">
+                <div className="mt-3 text-xs leading-relaxed text-muted-foreground print:text-neutral-600">
                   <p>{studio.address}</p>
                   <p>
                     Phone: {studio.phone} · WhatsApp: {formatWhatsAppDisplay(studio.whatsapp)}
@@ -739,11 +779,13 @@ function Page() {
               </div>
 
               <div className="text-right">
-                <span className="inline-block rounded-xs bg-neutral-100 px-3 py-1 font-mono text-xs font-semibold text-neutral-700">
+                <span className="inline-block rounded-xs bg-muted px-3 py-1 font-mono text-xs font-semibold text-foreground print:bg-neutral-100 print:text-neutral-700">
                   QUOTATION
                 </span>
-                <p className="mt-2 font-mono text-xs text-neutral-500">REF: {printQuote.id}</p>
-                <p className="text-xs text-neutral-500">
+                <p className="mt-2 font-mono text-xs text-muted-foreground print:text-neutral-500">
+                  REF: {printQuote.id}
+                </p>
+                <p className="text-xs text-muted-foreground print:text-neutral-500">
                   Date:{" "}
                   {new Date().toLocaleDateString("en-IN", {
                     day: "numeric",
@@ -755,24 +797,28 @@ function Page() {
             </div>
 
             {/* Client info */}
-            <div className="my-6 grid grid-cols-2 gap-4 rounded-xs bg-neutral-50 p-4 text-xs">
+            <div className="my-6 grid grid-cols-2 gap-4 rounded-xs border border-border bg-muted/40 p-4 text-xs print:border-none print:bg-neutral-50">
               <div>
-                <p className="font-semibold text-neutral-500 uppercase tracking-wider">
+                <p className="font-semibold uppercase tracking-wider text-muted-foreground print:text-neutral-500">
                   Prepared For
                 </p>
-                <p className="mt-1 text-sm font-bold text-neutral-900">{printQuote.customer}</p>
-                <p className="text-neutral-600">Phone: {printQuote.phone}</p>
-                <p className="text-neutral-600">Email: {printQuote.email || "—"}</p>
+                <p className="mt-1 text-sm font-bold text-foreground print:text-neutral-900">
+                  {printQuote.customer}
+                </p>
+                <p className="text-muted-foreground print:text-neutral-600">Phone: {printQuote.phone}</p>
+                <p className="text-muted-foreground print:text-neutral-600">
+                  Email: {printQuote.email || "—"}
+                </p>
               </div>
               <div>
-                <p className="font-semibold text-neutral-500 uppercase tracking-wider">
+                <p className="font-semibold uppercase tracking-wider text-muted-foreground print:text-neutral-500">
                   Event Details
                 </p>
-                <p className="mt-1 font-medium text-neutral-800">
+                <p className="mt-1 font-medium text-foreground print:text-neutral-800">
                   Category: {printQuote.category || printQuote.packageName}
                 </p>
-                <p className="text-neutral-600">Date: {printQuote.eventDate}</p>
-                <p className="text-neutral-600">
+                <p className="text-muted-foreground print:text-neutral-600">Date: {printQuote.eventDate}</p>
+                <p className="text-muted-foreground print:text-neutral-600">
                   Location: {printQuote.location || "Studio / On-location"}
                 </p>
               </div>
@@ -781,16 +827,18 @@ function Page() {
             {/* Itemized Table */}
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-neutral-300 font-semibold uppercase text-neutral-500">
+                <tr className="border-b border-border font-semibold uppercase text-muted-foreground print:border-neutral-300 print:text-neutral-500">
                   <th className="py-2">Description</th>
                   <th className="py-2 text-right">Amount</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-200">
+              <tbody className="divide-y divide-border print:divide-neutral-200">
                 <tr>
                   <td className="py-3">
-                    <p className="font-semibold text-neutral-900">{printQuote.packageName}</p>
-                    <p className="text-neutral-500">
+                    <p className="font-semibold text-foreground print:text-neutral-900">
+                      {printQuote.packageName}
+                    </p>
+                    <p className="text-muted-foreground print:text-neutral-500">
                       Duration: {printQuote.durationDays || 1} Day(s) coverage
                     </p>
                   </td>
@@ -802,10 +850,10 @@ function Page() {
                 {printQuote.addOns && (
                   <tr>
                     <td className="py-3">
-                      <p className="font-semibold text-neutral-900">
+                      <p className="font-semibold text-foreground print:text-neutral-900">
                         Additional Services / Add-ons
                       </p>
-                      <p className="text-neutral-500">{printQuote.addOns}</p>
+                      <p className="text-muted-foreground print:text-neutral-500">{printQuote.addOns}</p>
                     </td>
                     <td className="py-3 text-right font-medium">
                       {formatINR(printQuote.additionalServicesPrice ?? 0)}
@@ -816,7 +864,9 @@ function Page() {
                 {(printQuote.extraCharges ?? 0) > 0 && (
                   <tr>
                     <td className="py-3">
-                      <p className="font-semibold text-neutral-900">Travel & Outstation Charges</p>
+                      <p className="font-semibold text-foreground print:text-neutral-900">
+                        Travel & Outstation Charges
+                      </p>
                     </td>
                     <td className="py-3 text-right font-medium">
                       {formatINR(printQuote.extraCharges ?? 0)}
@@ -826,19 +876,19 @@ function Page() {
 
                 {(printQuote.discount ?? 0) > 0 && (
                   <tr>
-                    <td className="py-3 text-emerald-700">
+                    <td className="py-3 text-emerald-600 dark:text-emerald-400 print:text-emerald-700">
                       <p className="font-semibold">Special Courtesy Discount</p>
                     </td>
-                    <td className="py-3 text-right font-medium text-emerald-700">
+                    <td className="py-3 text-right font-medium text-emerald-600 dark:text-emerald-400 print:text-emerald-700">
                       -{formatINR(printQuote.discount ?? 0)}
                     </td>
                   </tr>
                 )}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-neutral-900 font-bold text-sm">
-                  <td className="py-4 text-neutral-900">Total Approved Quotation</td>
-                  <td className="py-4 text-right text-neutral-900">
+                <tr className="border-t-2 border-foreground font-bold text-sm print:border-neutral-900">
+                  <td className="py-4 text-foreground print:text-neutral-900">Total Approved Quotation</td>
+                  <td className="py-4 text-right text-foreground print:text-neutral-900">
                     {formatINR(printQuote.finalQuotation ?? printQuote.estimate)}
                   </td>
                 </tr>
@@ -846,9 +896,9 @@ function Page() {
             </table>
 
             {/* Terms and conditions */}
-            <div className="mt-8 border-t border-neutral-200 pt-4 text-[11px] text-neutral-500 leading-relaxed">
-              <p className="font-semibold text-neutral-700">Terms & Booking Conditions:</p>
-              <ul className="mt-1 list-disc pl-4 space-y-0.5">
+            <div className="mt-8 border-t border-border pt-4 text-[11px] leading-relaxed text-muted-foreground print:border-neutral-200 print:text-neutral-500">
+              <p className="font-semibold text-foreground print:text-neutral-700">Terms & Booking Conditions:</p>
+              <ul className="mt-1 list-disc space-y-0.5 pl-4">
                 <li>Booking is confirmed upon receipt of a 50% advance retainer.</li>
                 <li>Dates are reserved exclusively on a first-come, first-served basis.</li>
                 <li>Remaining balance is payable on or before the first day of shooting.</li>
@@ -860,11 +910,11 @@ function Page() {
             </div>
 
             {/* Printable Modal Actions */}
-            <div className="mt-8 flex items-center justify-between border-t border-neutral-200 pt-4 print:hidden">
+            <div className="mt-8 flex items-center justify-between border-t border-border pt-4 print:hidden">
               <button
                 type="button"
                 onClick={() => setPrintQuote(null)}
-                className="rounded-sm border border-neutral-300 px-4 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-100"
+                className="rounded-sm border border-border px-4 py-2 text-xs font-medium text-foreground hover:bg-muted"
               >
                 Close Preview
               </button>
@@ -872,7 +922,7 @@ function Page() {
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="inline-flex items-center gap-1.5 rounded-sm bg-neutral-900 px-5 py-2 text-xs font-semibold text-white hover:bg-neutral-800"
+                className="inline-flex items-center gap-1.5 rounded-sm bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground hover:bg-olive"
               >
                 <Printer size={15} />
                 <span>Print Quotation / Save as PDF</span>

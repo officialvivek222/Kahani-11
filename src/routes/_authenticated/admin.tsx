@@ -13,20 +13,33 @@ import {
   PlusSquare,
   Settings,
   User,
+  Users,
   X,
 } from "lucide-react";
 import { useState } from "react";
 import { AdminStoreProvider, adminContentOptions } from "@/components/admin/store";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { studio } from "@/config/studio";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/site/ThemeToggle";
 
+function LoadingScreen() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
+      <div className="flex flex-col items-center gap-4">
+        <span className="font-display text-2xl tracking-[0.2em]">KAHANI STUDIO</span>
+        <div className="size-6 animate-spin rounded-full border-2 border-bronze border-t-transparent" />
+      </div>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/_authenticated/admin")({
   loader: ({ context }) => context.queryClient.ensureQueryData(adminContentOptions),
   errorComponent: AccessRequired,
+  pendingComponent: LoadingScreen,
   head: () => ({
     meta: [
       { property: "og:type", content: "website" },
@@ -72,8 +85,32 @@ const nav = [
   { to: "/admin/quotations", label: "Quotations", icon: BadgeIndianRupee },
   { to: "/admin/testimonials", label: "Testimonials", icon: MessageSquareQuote },
   { to: "/admin/settings", label: "Website Settings", icon: Settings },
+  { to: "/admin/team", label: "Team", icon: Users },
   { to: "/admin/profile", label: "Profile", icon: User },
 ] as const;
+
+function AdminTopBarProfile() {
+  const { data } = useSuspenseQuery(adminContentOptions);
+  const name = data.profile?.display_name?.trim() || "Admin";
+  const initials =
+    name
+      .split(/\s+/)
+      .map((w: string) => w[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "A";
+
+  return (
+    <div className="flex items-center gap-3">
+      <ThemeToggle className="size-9" />
+      <span className="text-sm font-medium">{name}</span>
+      <span className="grid size-8 place-items-center rounded-full bg-bronze text-xs font-medium text-paper">
+        {initials}
+      </span>
+    </div>
+  );
+}
 
 function AdminLayout() {
   const [open, setOpen] = useState(false);
@@ -109,10 +146,20 @@ function AdminLayout() {
           </Link>
         ))}
       </nav>
+      <div className="border-t border-sidebar-border px-6 py-3 text-xs text-muted-foreground">
+        <a
+          href="https://wa.me/91XXXXXXXXXX?text=Hi%20Rootmile%2C%20I%20need%20help%20with%20the%20Kahani%20Studio%20website"
+          target="_blank"
+          rel="noopener"
+          className="hover:text-sidebar-foreground hover:underline"
+        >
+          Need help or changes? Rootmile Technologies
+        </a>
+      </div>
       <Button
         variant="ghost"
         onClick={signOut}
-        className="justify-start border-t border-sidebar-border px-6 py-4"
+        className="justify-start border-t border-sidebar-border px-6 py-4 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
       >
         <LogOut size={16} />
         Sign out
@@ -138,13 +185,7 @@ function AdminLayout() {
               <FileText size={12} className="mr-1 inline" />
               Studio workspace
             </p>
-            <div className="flex items-center gap-3">
-              <ThemeToggle className="size-9" />
-              <span className="text-sm">Studio Admin</span>
-              <span className="grid size-8 place-items-center rounded-full bg-bronze text-xs font-medium text-paper">
-                KS
-              </span>
-            </div>
+            <AdminTopBarProfile />
           </header>
           <div className={cn("mx-auto max-w-[1280px] p-4 lg:p-8")}>
             <Outlet />

@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/site/PageHeader";
 import { Reveal } from "@/components/site/Reveal";
 import { CtaBand } from "@/components/site/CtaBand";
 import { useStudioContent } from "@/lib/studio-content";
+import { images } from "@/lib/images";
 import { btn } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
@@ -11,7 +12,9 @@ export const Route = createFileRoute("/services")({
   head: () => ({
     meta: [
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://kahanistudio.in/og-image.jpg" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://kahanistudio.in/og-image.jpg" },
       { title: "Services — Kahani Studio" },
       {
         name: "description",
@@ -111,7 +114,7 @@ function Services() {
             <a
               key={c.id}
               href={`#${c.slug}`}
-              className="rounded-full border border-border/80 bg-card/60 px-4 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground backdrop-blur-sm transition-colors hover:border-bronze hover:bg-bronze hover:text-white"
+              className="rounded-full border border-border/80 bg-card/60 px-4 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground backdrop-blur-sm transition-colors hover:border-bronze hover:bg-bronze hover:text-paper dark:hover:text-charcoal"
             >
               {c.short || c.name}
             </a>

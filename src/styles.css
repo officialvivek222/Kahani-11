@@ -55,9 +55,9 @@
   --ivory: oklch(0.959 0.011 84);
   --paper: oklch(0.985 0.006 84);
   --charcoal: oklch(0.248 0.007 95);
-  --bronze: oklch(0.638 0.068 74);
+  --bronze: oklch(0.55 0.07 74);
   --taupe: oklch(0.729 0.03 74);
-  --stone: oklch(0.548 0.011 80);
+  --stone: oklch(0.50 0.011 80);
   --olive: oklch(0.43 0.025 115);
   --overlay: oklch(0.18 0.01 80);
   --admin-bg: oklch(0.945 0.006 80);
@@ -126,8 +126,8 @@
   --accent-foreground: oklch(0.96 0.006 84);
   --destructive: oklch(0.6 0.18 28);
   --destructive-foreground: oklch(0.96 0.006 84);
-  --border: oklch(0.27 0.008 80);
-  --input: oklch(0.27 0.008 80);
+  --border: oklch(0.30 0.008 80);
+  --input: oklch(0.30 0.008 80);
   --ring: var(--bronze);
   --sidebar: oklch(0.12 0.005 80);
   --sidebar-foreground: oklch(0.9 0.008 80);
@@ -144,10 +144,14 @@
     border-color: var(--color-border);
   }
   html {
+    color-scheme: light;
     scroll-behavior: smooth;
     background-color: var(--color-background);
     color: var(--color-foreground);
     min-height: 100%;
+  }
+  html.dark {
+    color-scheme: dark;
   }
   body {
     background-color: var(--color-background);
@@ -170,6 +174,74 @@
   ::selection {
     background: var(--bronze);
     color: var(--paper);
+  }
+
+  input,
+  textarea,
+  select {
+    color: var(--color-foreground);
+    background-color: var(--color-card);
+  }
+  select option {
+    background-color: var(--color-card);
+    color: var(--color-foreground);
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-muted-foreground);
+    opacity: 0.85;
+  }
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--color-bronze);
+    color-scheme: light;
+  }
+  html.dark input[type="checkbox"],
+  html.dark input[type="radio"] {
+    color-scheme: dark;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator:hover,
+  input[type="time"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+  }
+  html.dark input[type="date"]::-webkit-calendar-picker-indicator,
+  html.dark input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: brightness(0) invert(1);
+    opacity: 0.85;
+    cursor: pointer;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus, 
+  input:-webkit-autofill:active,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--color-foreground) !important;
+    -webkit-box-shadow: 0 0 0px 1000px var(--color-card) inset !important;
+    box-shadow: 0 0 0px 1000px var(--color-card) inset !important;
+    caret-color: var(--color-foreground) !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  [data-sonner-toaster] [data-sonner-toast] {
+    background-color: var(--color-card) !important;
+    color: var(--color-foreground) !important;
+    border-color: var(--color-border) !important;
+  }
+  [data-sonner-toaster] [data-description] {
+    color: var(--color-muted-foreground) !important;
   }
 }
 

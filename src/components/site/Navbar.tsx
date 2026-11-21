@@ -2,6 +2,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useStudio } from "@/config/studio";
+import { images } from "@/lib/images";
 import { btn } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -53,12 +54,68 @@ export function Navbar() {
       )}
     >
       <div className="container-x grid h-[72px] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 xl:flex xl:h-[84px] xl:justify-between">
-        <Link
-          to="/"
-          className="min-w-0 font-display text-[20px] tracking-[0.16em] sm:text-[22px] xl:shrink-0 xl:text-[24px]"
-        >
-          {studio.name}
-        </Link>
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3.5">
+          <Link
+            to="/"
+            className="flex min-w-0 items-center gap-2 py-1"
+            aria-label="Kahani Photography Home"
+          >
+            <img
+              src={images.logo}
+              alt="Kahani Photography Logo"
+              width={160}
+              height={55}
+              className={cn(
+                "h-8 w-auto max-w-[150px] object-contain sm:h-10 sm:max-w-[190px]",
+                transparent ? "block" : "hidden dark:block",
+              )}
+            />
+            <img
+              src={images.logoDark}
+              alt="Kahani Photography Logo"
+              width={160}
+              height={55}
+              className={cn(
+                "h-8 w-auto max-w-[150px] object-contain sm:h-10 sm:max-w-[190px]",
+                transparent ? "hidden" : "block dark:hidden",
+              )}
+            />
+          </Link>
+          <div className="hidden shrink-0 items-center gap-1 border-l border-current/25 pl-2 sm:flex sm:gap-1.5 sm:pl-3">
+            <a
+              href={studio.social.instagram}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Instagram"
+              title="Instagram"
+              className="rounded-full p-1 transition-opacity hover:opacity-80"
+            >
+              <img
+                src={images.instagram}
+                alt="Instagram"
+                width={18}
+                height={18}
+                className="size-[18px] object-contain rounded-[4px]"
+              />
+            </a>
+            <a
+              href={studio.social.youtube}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="YouTube"
+              title="YouTube"
+              className="rounded-full p-1 transition-opacity hover:opacity-80"
+            >
+              <img
+                src={images.youtube}
+                alt="YouTube"
+                width={18}
+                height={18}
+                className="size-[18px] object-contain"
+              />
+            </a>
+          </div>
+        </div>
         <nav className="hidden items-center gap-7 xl:flex">
           {navLinks.map((l) => (
             <Link
@@ -117,7 +174,41 @@ export function Navbar() {
             <Link to="/quote" className={cn(btn("solid"), "mt-8")}>
               Get a Quote
             </Link>
-            <p className="mt-8 break-words text-sm text-muted-foreground">
+            <div className="mt-6 flex items-center gap-3">
+              <a
+                href={studio.social.instagram}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Instagram"
+                className="flex items-center gap-2 border border-border px-3.5 py-2 text-xs uppercase tracking-wider text-foreground hover:border-bronze hover:text-bronze"
+              >
+                <img
+                  src={images.instagram}
+                  alt="Instagram"
+                  width={15}
+                  height={15}
+                  className="size-[15px] object-contain rounded-[3px]"
+                />
+                <span>Instagram</span>
+              </a>
+              <a
+                href={studio.social.youtube}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="YouTube"
+                className="flex items-center gap-2 border border-border px-3.5 py-2 text-xs uppercase tracking-wider text-foreground hover:border-bronze hover:text-bronze"
+              >
+                <img
+                  src={images.youtube}
+                  alt="YouTube"
+                  width={15}
+                  height={15}
+                  className="size-[15px] object-contain"
+                />
+                <span>YouTube</span>
+              </a>
+            </div>
+            <p className="mt-6 break-words text-sm text-muted-foreground">
               {studio.phone}
               <br />
               {studio.email}

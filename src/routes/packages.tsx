@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/site/PageHeader";
 import { PackageCard } from "@/components/site/PackageCard";
 import { CtaBand } from "@/components/site/CtaBand";
 import { useStudioContent } from "@/lib/studio-content";
+import { images } from "@/lib/images";
 import type { PackageGroup } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -11,7 +12,9 @@ export const Route = createFileRoute("/packages")({
   head: () => ({
     meta: [
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://kahanistudio.in/og-image.jpg" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://kahanistudio.in/og-image.jpg" },
       { title: "Packages & Pricing — Kahani Studio" },
       {
         name: "description",
@@ -28,7 +31,7 @@ export const Route = createFileRoute("/packages")({
   component: Packages,
 });
 
-const groups: PackageGroup[] = [
+const defaultGroups: PackageGroup[] = [
   "Wedding",
   "Pre-Wedding",
   "Birthday",
@@ -39,7 +42,10 @@ const groups: PackageGroup[] = [
 
 function Packages() {
   const { packages } = useStudioContent();
-  const [g, setG] = useState<PackageGroup>("Wedding");
+  const allGroups = Array.from(
+    new Set([...defaultGroups, ...packages.filter((p) => p.active).map((p) => p.group)]),
+  );
+  const [g, setG] = useState<string>("Wedding");
   return (
     <>
       <PageHeader
@@ -49,7 +55,7 @@ function Packages() {
       />
       <section className="container-x pb-24 lg:pb-32">
         <div role="tablist" className="mb-12 flex gap-6 overflow-x-auto border-b border-border">
-          {groups.map((x) => (
+          {allGroups.map((x) => (
             <button
               role="tab"
               aria-selected={g === x}
@@ -67,8 +73,9 @@ function Packages() {
           ))}
         </div>
         <div className="grid gap-6 lg:grid-cols-3">
-          {packages
+          {[...packages]
             .filter((p) => p.group === g && p.active)
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.price - b.price)
             .map((p) => (
               <PackageCard key={p.id} pkg={p} />
             ))}

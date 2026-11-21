@@ -8,7 +8,7 @@ export function CtaBand() {
     <section className="relative isolate overflow-hidden">
       <img
         src={images.cinema}
-        alt=""
+        alt="Cinematography and wedding shoot background"
         loading="lazy"
         width={1216}
         height={832}

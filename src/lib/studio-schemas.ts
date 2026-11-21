@@ -29,6 +29,7 @@ export const contentSchemas = {
     active: z.boolean(),
     features,
     highlights: features.optional(),
+    order: z.number().int().min(0).max(999).optional(),
   }),
   portfolio: z.object({
     id: name,
@@ -41,12 +42,19 @@ export const contentSchemas = {
   }),
   packages: z.object({
     id: name,
-    group: z.enum(["Wedding", "Pre-Wedding", "Birthday", "Engagement", "Events", "Other Services"]),
-    tier: z.enum(["Basic", "Premium", "Luxury"]),
+    group: z.string().trim().min(1, "Enter a category name").max(60),
+    tier: z
+      .string()
+      .trim()
+      .min(1, "Enter a package name")
+      .max(60)
+      .refine((v) => v.toLowerCase() !== "custom", "Package name cannot be 'Custom'"),
     price,
     description: text,
     features,
     active: z.boolean(),
+    popular: z.boolean().optional(),
+    order: z.number().int().min(0).max(999).optional(),
   }),
   addOns: z.object({ id: name, name, price, description: text, active: z.boolean() }),
   testimonials: z.object({
@@ -66,9 +74,32 @@ export const settingsSchema = z.object({
   email: z.string().email().max(255),
   address: text,
   instagram: z.string().url().max(2048),
-  facebook: z.string().url().max(2048),
+  facebook: z.string().max(2048).optional(),
   youtube: z.string().url().max(2048),
+  mapEmbed: z.string().max(4000).optional(),
 });
+
+export function getMapSrc(input: string | null | undefined): string | null {
+  if (!input || typeof input !== "string") return null;
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  let url = trimmed;
+  const iframeMatch = trimmed.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+  if (iframeMatch && iframeMatch[1]) {
+    url = iframeMatch[1].trim();
+  }
+
+  const isGoogleEmbed = /^https:\/\/(www\.)?google\.com\/maps\/embed/i.test(url);
+  const isMapsOutputEmbed =
+    /^https:\/\/maps\.google\.com\/maps\?/i.test(url) && url.includes("output=embed");
+
+  if (isGoogleEmbed || isMapsOutputEmbed) {
+    return url;
+  }
+
+  return null;
+}
 export const contactInquirySchema = z.object({
   name: name.min(2),
   phone,
@@ -78,11 +109,17 @@ export const contactInquirySchema = z.object({
 });
 export const quoteInquirySchema = z.object({
   category: name,
-  packageTier: z.enum(["Basic", "Premium", "Luxury", "Custom"]),
+  packageId: z.string().max(100).optional(),
+  packageTier: z.string().trim().min(1).max(60),
   packagePrice: price,
   addOns: z.array(z.object({ name, price })).max(20),
   durationDays: z.number().int().min(1).max(10),
-  eventDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  eventDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter date as YYYY-MM-DD")
+    .refine((d) => d >= new Date().toISOString().slice(0, 10), {
+      message: "Event date cannot be in the past",
+    }),
   location: z.string().trim().min(2).max(120),
   notes: text,
   name: name.min(2),

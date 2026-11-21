@@ -43,6 +43,7 @@ function Page() {
                 active: true,
                 features: [],
                 highlights: [],
+                order: 0,
               })
             }
           >
@@ -119,6 +120,7 @@ function Page() {
                 short: edit.short.trim() || edit.name,
                 features: edit.features.map((f) => f.trim()).filter(Boolean),
                 highlights: (edit.highlights || []).map((h) => h.trim()).filter(Boolean),
+                order: edit.order !== undefined ? Number(edit.order) : undefined,
               });
               setEdit(null);
             }}
@@ -143,7 +145,7 @@ function Page() {
               </L>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
               <L label="URL Slug">
                 <input
                   placeholder="e.g. wedding"
@@ -169,6 +171,16 @@ function Page() {
                     </option>
                   ))}
                 </select>
+              </L>
+              <L label="Display order">
+                <input
+                  type="number"
+                  min={0}
+                  max={999}
+                  className={aField}
+                  value={edit.order ?? 0}
+                  onChange={(e) => setEdit({ ...edit, order: Number(e.target.value) })}
+                />
               </L>
             </div>
 

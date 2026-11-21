@@ -1,4 +1,6 @@
 // Centralised image registry — swap these for storage URLs later.
+import logo from "@/assets/logo.png";
+import logoDark from "@/assets/logo-dark.png";
 import hero from "@/assets/hero-wedding.jpg";
 import prewedding from "@/assets/prewedding.jpg";
 import engagement from "@/assets/engagement.jpg";
@@ -11,8 +13,12 @@ import cinema from "@/assets/cinema.jpg";
 import product from "@/assets/product.jpg";
 import birthday from "@/assets/birthday.jpg";
 import bride from "@/assets/bride.jpg";
+import instagram from "@/assets/instagram.png";
+import youtube from "@/assets/youtube.png";
 
 export const images = {
+  logo,
+  logoDark,
   hero,
   prewedding,
   engagement,
@@ -25,6 +31,8 @@ export const images = {
   product,
   birthday,
   bride,
+  instagram,
+  youtube,
 };
 export type ImageKey = keyof typeof images;
 export function resolveImage(value: string) {

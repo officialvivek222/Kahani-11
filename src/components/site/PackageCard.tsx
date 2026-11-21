@@ -5,7 +5,7 @@ import type { Package } from "@/types";
 import { btn } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 export function PackageCard({ pkg }: { pkg: Package }) {
-  const hi = pkg.tier === "Premium";
+  const hi = pkg.popular === true || (pkg.popular === undefined && pkg.tier === "Premium");
   return (
     <div
       className={cn(
@@ -36,9 +36,10 @@ export function PackageCard({ pkg }: { pkg: Package }) {
       </ul>
       <Link
         to="/quote"
-        search={{ category: pkg.group, tier: pkg.tier }}
+        search={{ category: pkg.group, package: pkg.id, tier: pkg.tier }}
         onClick={() =>
           window.__lovableEvents?.track?.("project.package_selected", {
+            package_id: pkg.id,
             tier: pkg.tier,
             group: pkg.group,
           })

@@ -1,6 +1,5 @@
 import { createContext, useContext, useRef, useState, type ReactNode } from "react";
 import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { getAdminContent, saveAdminContent } from "@/lib/studio.functions";
 import { decodeContent, encodeContent } from "@/lib/studio-content";
@@ -12,6 +11,7 @@ import type {
   Package,
   PortfolioItem,
   Quotation,
+  QuotationRevision,
   Testimonial,
 } from "@/types";
 
@@ -41,6 +41,7 @@ const initialSettings = {
   instagram: studio.social.instagram as string,
   facebook: studio.social.facebook as string,
   youtube: studio.social.youtube as string,
+  mapEmbed: (studio.mapEmbed || "") as string,
 };
 const Ctx = createContext<Store | null>(null);
 export const adminContentOptions = queryOptions({
@@ -52,7 +53,7 @@ export const adminContentOptions = queryOptions({
 export function AdminStoreProvider({ children }: { children: ReactNode }) {
   const { data } = useSuspenseQuery(adminContentOptions);
   const client = useQueryClient();
-  const save = useServerFn(saveAdminContent);
+  const save = saveAdminContent;
   const content = decodeContent(data.content);
   const [overrides, setOverrides] = useState<Record<string, Record<string, unknown>>>({});
   const queue = useRef(Promise.resolve());
@@ -75,7 +76,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       .catch(() => {})
       .then(async () => {
         try {
-          await save({ data: input });
+          await save(input);
           await client.invalidateQueries({ queryKey: ["studio-public"] });
           await client.invalidateQueries({ queryKey: ["studio-admin"] });
           toast.success("Saved");

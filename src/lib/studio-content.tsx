@@ -21,6 +21,14 @@ export function decodeContent(rows: { kind: string; id: string; data: Json }[]):
     if (typeof item["image"] === "string") item["image"] = resolveImage(item["image"]);
     (result[row.kind as keyof StudioContent] as unknown[]).push(item);
   }
+  result.categories.sort((a, b) => {
+    if (a.order !== undefined && b.order !== undefined) {
+      return a.order - b.order || a.id.localeCompare(b.id, undefined, { numeric: true });
+    }
+    if (a.order !== undefined) return -1;
+    if (b.order !== undefined) return 1;
+    return a.id.localeCompare(b.id, undefined, { numeric: true });
+  });
   return result;
 }
 export function encodeContent(item: unknown) {

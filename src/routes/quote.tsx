@@ -3,13 +3,13 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Check, ChevronLeft, MessageCircle, Mail } from "lucide-react";
 import type * as React from "react";
 import { useMemo, useRef, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { submitQuote } from "@/lib/studio.functions";
 import { quoteInquirySchema } from "@/lib/studio-schemas";
 import { Button } from "@/components/ui/button";
 import { z } from "zod";
 import { formatINR, useStudio, waLink } from "@/config/studio";
 import { useStudioContent } from "@/lib/studio-content";
+import { images } from "@/lib/images";
 import {
   buildWhatsAppMessage,
   calculateQuote,
@@ -23,14 +23,21 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/quote")({
   validateSearch: (
     s: Record<string, unknown>,
-  ): { category?: string | undefined; tier?: string | undefined } => ({
+  ): {
+    category?: string | undefined;
+    package?: string | undefined;
+    tier?: string | undefined;
+  } => ({
     category: typeof s["category"] === "string" ? s["category"] : undefined,
+    package: typeof s["package"] === "string" ? s["package"] : undefined,
     tier: typeof s["tier"] === "string" ? s["tier"] : undefined,
   }),
   head: () => ({
     meta: [
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://kahanistudio.in/og-image.jpg" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://kahanistudio.in/og-image.jpg" },
       { title: "Get a Quote — Kahani Studio" },
       {
         name: "description",
@@ -48,13 +55,15 @@ export const Route = createFileRoute("/quote")({
 });
 
 const steps = ["Category", "Package", "Add-ons", "Event", "Your details", "Summary"];
-const tiers = ["Basic", "Premium", "Luxury", "Custom"] as const;
 
 const eventSchema = z.object({
   eventDate: z
     .string()
     .min(1, "Choose a date")
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter date as YYYY-MM-DD"),
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter date as YYYY-MM-DD")
+    .refine((d) => d >= new Date().toISOString().slice(0, 10), {
+      message: "Event date cannot be in the past",
+    }),
   location: z.string().trim().min(2, "Enter a location").max(120),
   durationDays: z.number().int().min(1).max(10),
 });
@@ -75,20 +84,70 @@ function Quote() {
   const studio = useStudio();
   const { addOns, categories, packages } = useStudioContent();
   const search = Route.useSearch();
-  const initialCat =
+  const pkgFromUrl = search.package
+    ? packages.find((p) => p.id === search.package)
+    : undefined;
+
+  const pkgGroupMatchesCat = pkgFromUrl
+    ? categories.some(
+        (c) =>
+          c.active &&
+          (c.name.toLowerCase() === pkgFromUrl.group.toLowerCase() ||
+            c.short?.toLowerCase() === pkgFromUrl.group.toLowerCase() ||
+            groupFor(c.name).toLowerCase() === pkgFromUrl.group.toLowerCase()),
+      )
+    : false;
+
+  let initialCat =
     categories.find(
       (c) =>
-        c.name === search.category ||
-        c.short === search.category ||
-        groupFor(c.name) === search.category,
+        c.active &&
+        (c.name === search.category ||
+          c.short === search.category ||
+          groupFor(c.name) === search.category),
     )?.name ?? "";
+
+  if (pkgFromUrl) {
+    if (pkgGroupMatchesCat) {
+      if (!initialCat) {
+        initialCat =
+          categories.find(
+            (c) =>
+              c.active &&
+              (c.name.toLowerCase() === pkgFromUrl.group.toLowerCase() ||
+                groupFor(c.name).toLowerCase() === pkgFromUrl.group.toLowerCase()),
+          )?.name ?? "";
+      }
+    } else {
+      initialCat =
+        categories.find((c) => c.active && groupFor(c.name) === "Other Services")?.name ||
+        categories.find((c) => c.active)?.name ||
+        "";
+    }
+  }
+
+  const initialPkg = pkgFromUrl
+    ? pkgFromUrl
+    : search.tier
+      ? packages.find(
+          (p) =>
+            (initialCat ? p.group === groupFor(initialCat) : true) &&
+            p.tier.toLowerCase() === search.tier?.toLowerCase(),
+        )
+      : undefined;
+
+  const initialTier = initialPkg
+    ? initialPkg.tier
+    : search.tier?.toLowerCase() === "custom"
+      ? "Custom"
+      : "";
+
   const [step, setStep] = useState(initialCat ? 1 : 0);
   const [q, setQ] = useState<QuoteInput>({
     category: initialCat,
-    packageTier: (tiers as readonly string[]).includes(search.tier ?? "")
-      ? (search.tier as QuoteInput["packageTier"])
-      : "",
-    packagePrice: 0,
+    packageId: initialPkg?.id,
+    packageTier: initialTier,
+    packagePrice: initialPkg?.price ?? 0,
     addOns: [],
     durationDays: 1,
     eventDate: "",
@@ -120,12 +179,66 @@ function Quote() {
   const started = useRef(false);
   const stepStart = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion();
-  const saveQuote = useServerFn(submitQuote);
+  const saveQuote = submitQuote;
 
-  const groupPkgs = packages.filter((p) => p.active && p.group === groupFor(q.category));
+  const groupPkgs = useMemo(() => {
+    const active = packages.filter((p) => p.active);
+    const catName = q.category.trim().toLowerCase();
+    if (!catName) return [];
+
+    const standardGroups = [
+      "Wedding",
+      "Pre-Wedding",
+      "Birthday",
+      "Engagement",
+      "Events",
+      "Other Services",
+    ];
+
+    const isOtherServices = groupFor(q.category) === "Other Services";
+    const customPkgs = isOtherServices
+      ? active.filter((p) => !standardGroups.includes(p.group))
+      : [];
+
+    let matched = active.filter(
+      (p) =>
+        p.group.toLowerCase() === catName ||
+        catName.includes(p.group.toLowerCase()) ||
+        p.group.toLowerCase().includes(catName),
+    );
+    if (matched.length > 0) {
+      const all = [...new Set([...matched, ...customPkgs])];
+      return all.sort(
+        (a, b) => (a.order ?? 0) - (b.order ?? 0) || a.price - b.price,
+      );
+    }
+    const std = groupFor(q.category);
+    matched = active.filter((p) => p.group === std);
+    if (matched.length > 0) {
+      const all = [...new Set([...matched, ...customPkgs])];
+      return all.sort(
+        (a, b) => (a.order ?? 0) - (b.order ?? 0) || a.price - b.price,
+      );
+    }
+    matched = active.filter((p) => p.group === "Other Services");
+    const all = [...new Set([...matched, ...customPkgs])];
+    return all.sort(
+      (a, b) => (a.order ?? 0) - (b.order ?? 0) || a.price - b.price,
+    );
+  }, [packages, q.category]);
+
+  const selectedPkg = q.packageId
+    ? groupPkgs.find((p) => p.id === q.packageId) ?? packages.find((p) => p.id === q.packageId)
+    : groupPkgs.find((p) => p.tier.toLowerCase() === q.packageTier.toLowerCase());
+
   const priceOf = (tier: string) =>
-    tier === "Custom" ? 0 : (groupPkgs.find((p) => p.tier === tier)?.price ?? 0);
-  const full = { ...q, packagePrice: priceOf(q.packageTier) };
+    tier === "Custom" ? 0 : (selectedPkg?.price ?? groupPkgs.find((p) => p.tier === tier)?.price ?? 0);
+
+  const full = {
+    ...q,
+    packageId: selectedPkg?.id ?? q.packageId,
+    packagePrice: selectedPkg?.price ?? priceOf(q.packageTier),
+  };
   const calc = useMemo(
     () => calculateQuote(full),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -248,6 +361,7 @@ function Quote() {
                           onClick={() => {
                             startQuote();
                             up("category", c.name);
+                            up("packageId", undefined);
                             up("packageTier", "");
                           }}
                           className={cn(
@@ -258,7 +372,7 @@ function Quote() {
                         >
                           <img
                             src={c.image}
-                            alt=""
+                            alt={c.name}
                             loading="lazy"
                             className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                           />
@@ -280,46 +394,74 @@ function Quote() {
               {step === 1 && (
                 <Step title="Choose a package">
                   <div className="grid gap-4 sm:grid-cols-2">
-                    {tiers.map((t) => {
-                      const p = groupPkgs.find((x) => x.tier === t);
+                    {groupPkgs.map((p) => {
+                      const isSelected =
+                        q.packageId === p.id ||
+                        (!q.packageId && q.packageTier.toLowerCase() === p.tier.toLowerCase());
                       return (
                         <Button
                           variant="ghost"
-                          aria-pressed={q.packageTier === t}
-                          key={t}
-                          disabled={t !== "Custom" && !p}
+                          aria-pressed={isSelected}
+                          key={p.id}
                           onClick={() => {
                             startQuote();
-                            up("packageTier", t);
+                            up("packageId", p.id);
+                            up("packageTier", p.tier);
+                            up("packagePrice", p.price);
                             window.__lovableEvents?.track?.("project.package_selected", {
-                              tier: t,
+                              package_id: p.id,
+                              tier: p.tier,
                               group: groupFor(q.category),
                             });
                           }}
                           className={cn(
-                            "block h-auto min-w-0 whitespace-normal rounded-none border p-5 text-left transition-colors disabled:opacity-40 sm:p-6",
-                            q.packageTier === t
+                            "block h-auto min-w-0 whitespace-normal rounded-none border p-5 text-left transition-colors sm:p-6",
+                            isSelected
                               ? "border-bronze bg-card"
                               : "border-border hover:border-foreground/40",
                           )}
                         >
                           <div className="flex items-baseline justify-between">
-                            <span className="text-heading-card font-display">{t}</span>
-                            {q.packageTier === t && <Check size={18} className="text-bronze" />}
+                            <span className="text-heading-card font-display">{p.tier}</span>
+                            {isSelected && <Check size={18} className="text-bronze" />}
                           </div>
-                          <p className="mt-2 font-display text-[28px]">
-                            {t === "Custom"
-                              ? `From ${formatINR(CUSTOM_BASE)}`
-                              : formatINR(p?.price ?? 0)}
-                          </p>
+                          <p className="mt-2 font-display text-[28px]">{formatINR(p.price)}</p>
                           <p className="mt-2 text-sm text-muted-foreground">
-                            {t === "Custom"
-                              ? "Build it your way — we'll tailor coverage after a call."
-                              : p?.features.slice(0, 3).join(" · ")}
+                            {p.description || p.features.slice(0, 3).join(" · ")}
                           </p>
                         </Button>
                       );
                     })}
+
+                    <Button
+                      variant="ghost"
+                      aria-pressed={q.packageTier === "Custom"}
+                      onClick={() => {
+                        startQuote();
+                        up("packageId", undefined);
+                        up("packageTier", "Custom");
+                        up("packagePrice", 0);
+                        window.__lovableEvents?.track?.("project.package_selected", {
+                          tier: "Custom",
+                          group: groupFor(q.category),
+                        });
+                      }}
+                      className={cn(
+                        "block h-auto min-w-0 whitespace-normal rounded-none border p-5 text-left transition-colors sm:p-6",
+                        q.packageTier === "Custom"
+                          ? "border-bronze bg-card"
+                          : "border-border hover:border-foreground/40",
+                      )}
+                    >
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-heading-card font-display">Custom</span>
+                        {q.packageTier === "Custom" && <Check size={18} className="text-bronze" />}
+                      </div>
+                      <p className="mt-2 font-display text-[28px]">From {formatINR(CUSTOM_BASE)}</p>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Build it your way — we'll tailor coverage after a call.
+                      </p>
+                    </Button>
                   </div>
                 </Step>
               )}
@@ -361,6 +503,7 @@ function Quote() {
                     <Fd label="Event date" err={errors.eventDate}>
                       <input
                         type="date"
+                        min={new Date().toISOString().slice(0, 10)}
                         className={field}
                         value={q.eventDate}
                         onChange={(e) => up("eventDate", e.target.value)}

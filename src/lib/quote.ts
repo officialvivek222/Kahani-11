@@ -2,7 +2,8 @@ import { formatINR, studio } from "@/config/studio";
 
 export interface QuoteInput {
   category: string;
-  packageTier: "Basic" | "Premium" | "Luxury" | "Custom" | "";
+  packageId?: string | undefined;
+  packageTier: string;
   packagePrice: number; // 0 for custom
   addOns: { name: string; price: number }[];
   durationDays: number;
